@@ -21,6 +21,7 @@ from src.evaluation.folds import get_fold_indices
 from src.fuzzy_system.engine import classify_score, infer_sentiment
 from src.fuzzy_system.inputs import compute_fuzzy_inputs
 from src.utils.config import EMBEDDING_DIM, RANDOM_SEED
+from src.utils.seed import set_global_seed
 
 
 def cross_validate_naive_bayes(df):
@@ -96,7 +97,8 @@ def cross_validate_fuzzy(df):
     return results
 
 
-def cross_validate_lstm(df, glove_embeddings, max_len: int = 30, epochs: int = 30):
+def cross_validate_lstm(df, glove_embeddings, max_len: int = 30, epochs: int = 30,
+                         seed: int = RANDOM_SEED):
     """Same fold structure as the other systems. `glove_embeddings`
     (the dict returned by load_glove_embeddings) is passed in rather
     than reloaded here, since loading the ~1.2M-line GloVe file takes
@@ -106,7 +108,18 @@ def cross_validate_lstm(df, glove_embeddings, max_len: int = 30, epochs: int = 3
     Within the 80% training portion of each fold, a further internal
     80/20 split provides the validation set early stopping monitors,
     keeping the fold's held-out test portion completely untouched
-    until final prediction."""
+    until final prediction.
+
+    `seed` fixes Keras/TensorFlow's own random state (weight
+    initialisation, shuffling), which is separate from the
+    scikit-learn `random_state` values already fixed elsewhere in this
+    module. Two runs with the same `seed` reproduce the same fold
+    splits (get_fold_indices always uses RANDOM_SEED) AND the same
+    per-fold model initialisation, so results are fully reproducible.
+    Varying `seed` across repeated full runs is how genuine
+    run-to-run variance in the LSTM's training stability can be
+    measured -- see src/evaluation/lstm_stability.py."""
+    set_global_seed(seed)
     folds = get_fold_indices(df["sentiment_3class"])
     results = []
     for fold_num, (train_idx, test_idx) in enumerate(folds, start=1):
