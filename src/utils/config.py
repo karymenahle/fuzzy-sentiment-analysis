@@ -14,3 +14,7 @@ SENTIMENT_LABELS = ["positive", "negative", "neutral"]
 
 RANDOM_SEED = 42
 N_FOLDS = 5
+
+DATA_EMBEDDINGS_DIR = ROOT_DIR / "data" / "embeddings"
+GLOVE_FILENAME = "glove.twitter.27B.100d.txt"
+EMBEDDING_DIM = 100
